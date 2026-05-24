@@ -25,14 +25,15 @@ jobs:
         with:
           node-version: '22'
 
-      # 2. 再安裝 pnpm（此時環境已是 Node v22，帶入快取優化）
+      # 2. 再安裝 pnpm
       - name: Install pnpm
         uses: pnpm/action-setup@v4
         with:
           version: latest
 
+      # 3. 安裝依賴並允許執行 esbuild 等建置腳本
       - name: Install dependencies
-        run: pnpm install
+        run: pnpm install --allow-builds
 
       - name: Run ESLint
         run: pnpm run lint
@@ -73,8 +74,9 @@ jobs:
         with:
           version: latest
 
+      # 3. 安裝依賴並允許執行 esbuild 等建置腳本
       - name: Install dependencies
-        run: pnpm install
+        run: pnpm install --allow-builds
 
       - name: Replace ROUTES_CONFIG in wrangler.toml
         env:
