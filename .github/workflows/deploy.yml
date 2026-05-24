@@ -31,13 +31,9 @@ jobs:
         with:
           version: latest
 
-      # 3. 先允許所有套件的建置腳本執行，避免安全檢查擋住
-      - name: Allow build scripts
-        run: pnpm config set only-built-dependencies "*"
-
-      # 4. 正常安裝依賴
+      # 3. 使用 pnpm v11 官方推薦的強行允許建置參數來安裝依賴
       - name: Install dependencies
-        run: pnpm install
+        run: pnpm install --dangerously-allow-all-builds
 
       - name: Run ESLint
         run: pnpm run lint
@@ -78,13 +74,9 @@ jobs:
         with:
           version: latest
 
-      # 3. 先允許所有套件的建置腳本執行
-      - name: Allow build scripts
-        run: pnpm config set only-built-dependencies "*"
-
-      # 4. 正常安裝依賴
+      # 3. 使用相同的參數安裝依賴
       - name: Install dependencies
-        run: pnpm install
+        run: pnpm install --dangerously-allow-all-builds
 
       - name: Replace ROUTES_CONFIG in wrangler.toml
         env:
@@ -98,6 +90,13 @@ jobs:
 
           [vars]
           ROUTES_CONFIG = '''${ROUTES_CONFIG}'''
+          EOF
+
+      - name: Deploy to Cloudflare Workers
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}          ROUTES_CONFIG = '''${ROUTES_CONFIG}'''
           EOF
 
       - name: Deploy to Cloudflare Workers
