@@ -31,9 +31,13 @@ jobs:
         with:
           version: latest
 
-      # 3. 安裝依賴並允許執行 esbuild 等建置腳本
+      # 3. 先允許所有套件的建置腳本執行，避免安全檢查擋住
+      - name: Allow build scripts
+        run: pnpm config set only-built-dependencies "*"
+
+      # 4. 正常安裝依賴
       - name: Install dependencies
-        run: pnpm install --allow-builds
+        run: pnpm install
 
       - name: Run ESLint
         run: pnpm run lint
@@ -74,9 +78,13 @@ jobs:
         with:
           version: latest
 
-      # 3. 安裝依賴並允許執行 esbuild 等建置腳本
+      # 3. 先允許所有套件的建置腳本執行
+      - name: Allow build scripts
+        run: pnpm config set only-built-dependencies "*"
+
+      # 4. 正常安裝依賴
       - name: Install dependencies
-        run: pnpm install --allow-builds
+        run: pnpm install
 
       - name: Replace ROUTES_CONFIG in wrangler.toml
         env:
