@@ -1,34 +1,103 @@
-name: Lint and Type Check
+name: Deploy to Cloudflare Workers
 
 on:
-  pull_request:
-    branches:
-      - '**'
+  workflow_dispatch:
   push:
     branches:
-      - '**'
+      - main
+
+permissions:
+  contents: write
 
 jobs:
   lint:
-    name: Lint and Type Check
+    name: Lint
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref || github.ref }}
+          token: ${{ secrets.GITHUB_TOKEN }}
 
+      # 1. 先設定好 Node.js v22
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
-          cache: 'npm'
+          node-version: '22'
 
+      # 2. 再安裝 pnpm
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: latest
+
+      # 3. 安裝依賴（透過 env 環境變數直接放行所有建置腳本，最安全穩妥）
       - name: Install dependencies
-        run: npm install
+        env:
+          NPM_CONFIG_ONLY_BUILT_DEPENDENCIES: "*"
+        run: pnpm install
 
       - name: Run ESLint
-        run: npm run lint
+        run: pnpm run lint
 
       - name: Run type check
-        run: npm run type-check
+        run: pnpm run type-check
 
-      - name: Check formatting
-        run: npx prettier --check "src/**/*.ts"
+      - name: Format code
+        run: pnpm exec prettier --write "src/**/*.ts"
+
+      - name: Commit and push formatting changes
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git diff --staged --quiet || git commit -m "style: auto-format with prettier [skip ci]"
+          git push
+
+  deploy:
+    name: Deploy
+    runs-on: ubuntu-latest
+    needs: lint
+    if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref || github.ref }}
+
+      # 1. 先設定好 Node.js v22
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      # 2. 再安裝 pnpm
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: latest
+
+      # 3. 安裝依賴
+      - name: Install dependencies
+        env:
+          NPM_CONFIG_ONLY_BUILT_DEPENDENCIES: "*"
+        run: pnpm install
+
+      - name: Replace ROUTES_CONFIG in wrangler.toml
+        env:
+          ROUTES_CONFIG: ${{ vars.ROUTES_CONFIG }}
+        run: |
+          # Remove existing [vars] section and everything after it
+          sed -i '/^\[vars\]/,$d' wrangler.toml
+
+          # Add new [vars] section with GitHub Variable
+          cat >> wrangler.toml << EOF
+
+          [vars]
+          ROUTES_CONFIG = '''${ROUTES_CONFIG}'''
+          EOF
+
+      - name: Deploy to Cloudflare Workers
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
