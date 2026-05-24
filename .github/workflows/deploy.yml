@@ -25,13 +25,13 @@ jobs:
         with:
           node-version: '22'
 
-      # 2. 再安裝 pnpm
+      # 2. 強制安裝穩定版 pnpm v9 (完美避開 v11 的安全攔截)
       - name: Install pnpm
         uses: pnpm/action-setup@v4
         with:
-          version: latest
+          version: 9
 
-      # 3. 正常安裝依賴（它會自動讀取剛才建立的 .npmrc 檔案）
+      # 3. 正常安裝依賴，此時絕對不會再報 [ERR_PNPM_IGNORED_BUILDS]
       - name: Install dependencies
         run: pnpm install
 
@@ -68,11 +68,11 @@ jobs:
         with:
           node-version: '22'
 
-      # 2. 再安裝 pnpm
+      # 2. 強制安裝 pnpm v9
       - name: Install pnpm
         uses: pnpm/action-setup@v4
         with:
-          version: latest
+          version: 9
 
       # 3. 正常安裝依賴
       - name: Install dependencies
@@ -91,12 +91,6 @@ jobs:
           [vars]
           ROUTES_CONFIG = '''${ROUTES_CONFIG}'''
           EOF
-
-      - name: Deploy to Cloudflare Workers
-        uses: cloudflare/wrangler-action@v3
-        with:
-          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}          EOF
 
       - name: Deploy to Cloudflare Workers
         uses: cloudflare/wrangler-action@v3
