@@ -19,16 +19,17 @@ jobs:
           ref: ${{ github.head_ref || github.ref }}
           token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Install pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: latest
-
+      # 1. 先設定好 Node.js v22
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '22'
-          cache: 'pnpm'
+
+      # 2. 再安裝 pnpm（此時環境已是 Node v22，帶入快取優化）
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: latest
 
       - name: Install dependencies
         run: pnpm install
@@ -60,16 +61,17 @@ jobs:
         with:
           ref: ${{ github.head_ref || github.ref }}
 
-      - name: Install pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: latest
-
+      # 1. 先設定好 Node.js v22
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '22'
-          cache: 'pnpm'
+
+      # 2. 再安裝 pnpm
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: latest
 
       - name: Install dependencies
         run: pnpm install
